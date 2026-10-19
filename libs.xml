@@ -1,0 +1,19 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+<Script file="Libs\LibStub\LibStub.lua"/>
+<Script file="Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua"/>
+
+<Script file="Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
+<Script file="Libs\LibUnitEvent-1.0\LibUnitEvent-1.0.lua"/>
+<Script file="Libs\SimpleSticky.lua"/>
+
+<!--
+Packaged-release library includes were removed in this local Midnight test build.
+This GitHub tree does not contain those embedded library folders, so leaving the
+release-packager markers in place causes WoW to print "Couldn't open" warnings.
+Keep Ace3, LibSharedMedia-3.0, LibDBIcon-1.0, LibDualSpec-1.0, LibDeflate and
+LibSerialize installed as standalone addons, or use a properly packaged release.
+-->
+
+</Ui>

@@ -1,0 +1,37 @@
+PitBull4 Retail 12.1.5-P008
+Build: Midnight-12.1.5-Lorenzo-P008
+Date: 2026-10-18
+Based on the exact delivered Retail P007. Complete cumulative Retail package.
+
+Fixed during the P007 follow-up review
+
+- Avoid a complete unit-frame layout on every Soul Shards power event. The module now requests layout only when controls are created, removed or their capacity/geometry changes. Full and partial shard visuals still update on every relevant power event.
+- Rebind existing Soul Shards controls when the active module-layout database changes during a profile/layout switch or copy/reset. Rebuild using the existing pool so orientation, click-through and background settings follow the newly selected profile immediately.
+- Clear the cached layout reference when releasing a container.
+- Reset native shard visuals directly on acquisition/release. Releasing full shards no longer starts a spend/depletion animation while recycling the control. Reset the cached native fill state for the next owner/update.
+- Require the native ResetVisuals method before selecting ShardTemplate inheritance. A client without the required native lifecycle methods uses the existing P007 fallback.
+- Update AddOns metadata, build marker, DogTag versions and release diagnostics to P008.
+
+Measured local result
+
+- For each native/fallback path, 1,000 power-only events requested 1,000 complete layouts in exact P007 and zero in P008, with no new control allocations. Resource fill values continue updating throughout the test.
+- The profile-rebind fixture reproduces old horizontal geometry and mouse capture in P007 after switching to a vertical/click-through profile. P008 applies the new orientation, background and click-through settings.
+- Releasing five full native shards started five depletion animations in P007 and none in P008. This measures calls made during release; it is not a claim about observed animation artifacts in the game.
+
+Preserved
+
+- P007 missing-ShardTemplate handling, native or bundled fallback artwork, Destruction fragments, numeric secrecy guards and partial-container cleanup remain included.
+- P006 boss-aura preparation and frame-drag handling, P005 API/font/resource fixes and P004 group preview/anchor fixes remain included.
+- Aura rendering/filtering, Edit Mode integration, Blizzard-frame hiding, saved profiles, group movement, LuaTexts and libraries have no functional changes. Aura/Compatibility_12_1.lua changes only release metadata/status text.
+- No new polling, timers, global mixin changes or Blizzard-frame hooks are added.
+
+Validation and limits
+
+- The follow-up lifecycle tests use actual Retail module dispatch, frame refresh/update functions, control factory, SoulShards files and Blizzard WarlockShardMixin. Frame/texture APIs and client values are mocked.
+- Retained Retail regression tests, extended native/fallback shard checks, Lua/XML syntax, manifest paths, exact-base diff reconstruction and ZIP payload checks pass; details are in the validation report.
+- The performance result is a count of eliminated layout calls in the fixture, not a measured FPS increase. It is specific to the Soul Shards indicator.
+- No WoW client is running here. Final rendering, live combat/taint and encounter behavior still require in-game confirmation.
+
+Installation
+
+Replace the Retail PitBull4 folder, retain profiles and SavedVariables, and /reload outside combat. Verify Midnight-12.1.5-Lorenzo-P008. Test gaining/spending Warlock shards, Destruction fragments, switching between profiles with different shard orientations/background/click-through settings, and disabling/re-enabling the indicator.
