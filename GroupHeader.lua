@@ -574,7 +574,9 @@ local function build_raid_name_list_without_main_tanks(group_db)
 		if tanks and #tanks > 0 then
 			ora_main_tanks = {}
 			for _, tank_name in ipairs(tanks) do
-				ora_main_tanks[tank_name] = true
+				if not issecretvalue(tank_name) then
+					ora_main_tanks[tank_name] = true
+				end
 			end
 		end
 	end
@@ -594,9 +596,15 @@ local function build_raid_name_list_without_main_tanks(group_db)
 	local records = {}
 	for index = 1, math.min(num_members, MAX_RAID_MEMBERS) do
 		local name, _, subgroup, _, _, class_name, _, _, _, role, _, assigned_role = _G.GetRaidRosterInfo(index)
+		-- Roster identity fields may be restricted independently. Keep secrets out
+		-- of name matching, filter keys, grouping ranks and the sort comparator.
+		if issecretvalue(name) then name = nil end
+		if issecretvalue(subgroup) then subgroup = nil end
+		if issecretvalue(class_name) then class_name = nil end
+		local public_role, public_assigned_role
+		if not issecretvalue(role) then public_role = role end
+		if not issecretvalue(assigned_role) then public_assigned_role = assigned_role end
 		if name then
-			local public_role = issecretvalue(role) and nil or role
-			local public_assigned_role = issecretvalue(assigned_role) and nil or assigned_role
 			local is_main_tank = public_role == "MAINTANK"
 			if not is_main_tank and ora_main_tanks then
 				is_main_tank = ora_main_tanks[name] or false
@@ -655,15 +663,18 @@ local function build_raid_name_list_without_main_tanks(group_db)
 			local ar = group_rank[grouping_value(a)] or 999
 			local br = group_rank[grouping_value(b)] or 999
 			if ar ~= br then
-				return sort_direction == "DESC" and ar > br or ar < br
+				if sort_direction == "DESC" then return ar > br end
+				return ar < br
 			end
 		end
 		if sort_method == "NAME" then
 			if a.name ~= b.name then
-				return sort_direction == "DESC" and a.name > b.name or a.name < b.name
+				if sort_direction == "DESC" then return a.name > b.name end
+				return a.name < b.name
 			end
 		end
-		return sort_direction == "DESC" and a.index > b.index or a.index < b.index
+		if sort_direction == "DESC" then return a.index > b.index end
+		return a.index < b.index
 	end)
 
 	local names = {}
@@ -827,14 +838,15 @@ function GroupHeader:RefreshGroup(dont_refresh_children)
 	if exclude_main_tanks then
 		self:SetAttribute("sortMethod", "NAMELIST")
 		self:SetAttribute("sortDir", "ASC")
+		self:SetAttribute("groupBy", nil)
 	else
 		self:SetAttribute("sortMethod", sort_method)
 		self:SetAttribute("sortDir", sort_direction)
+		self:SetAttribute("groupBy", group_by)
 	end
 	-- self:SetAttribute("template", ClickCastHeader and "ClickCastUnitTemplate,PitBull4_UnitTemplate" or "PitBull4_UnitTemplate")
 	self:SetAttribute("template", "PitBull4_UnitTemplate")
 	self:SetAttribute("templateType", "Button")
-	self:SetAttribute("groupBy", exclude_main_tanks and nil or group_by)
 	local order = GROUPING_ORDER[group_db.group_by]
 	if type(order) == "function" then
 		order = order()
