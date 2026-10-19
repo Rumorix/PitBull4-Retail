@@ -1,0 +1,15 @@
+# Local OS and editor artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local build outputs (not addon source)
+*.zip
+*.luac
+
+# Intentionally DO NOT ignore Libs/, Lua/XML source, or addon metadata.
