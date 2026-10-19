@@ -1,0 +1,14 @@
+# Local editor settings and generated artifacts
+.vscode/
+.idea/
+.release/
+.DS_Store
+Thumbs.db
+*.zip
+*.log
+
+# Package exporter artifacts
+Localization/_export.lua
+Babelfish.lua
+
+# DO NOT ignore Libs/: this repository contains required in-tree libraries.
