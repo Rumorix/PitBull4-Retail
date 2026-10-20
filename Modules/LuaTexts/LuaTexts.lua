@@ -2515,9 +2515,24 @@ function PitBull4_LuaTexts:AddFontString(frame, font_string, name, data)
 
 	no_update[font_string] = nil
 	font_string:Show()
-	-- This font_string is already assigned to us.  So do nothing but
-	-- update the text.
+	-- Reused font strings may now have a different profile/layout configuration.
 	if texts[font_string] then
+		for event, entry in pairs(event_cache) do
+			if entry[font_string] and not db.events[event] then
+				entry[font_string] = nil
+				if not next(entry) then
+					if not protected_events[event] then
+						self:UnregisterEvent(event)
+					end
+					event_cache[event] = nil
+				end
+			end
+		end
+		for event, enabled in next, db.events do
+			if enabled then
+				event_cache_insert(event, font_string)
+			end
+		end
 		update_text(font_string,"_update")
 		if spell_cast_cache[font_string]  then
 			-- The actual object the frame is pointing at may have changed
