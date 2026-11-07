@@ -655,15 +655,18 @@ local function build_raid_name_list_without_main_tanks(group_db)
 			local ar = group_rank[grouping_value(a)] or 999
 			local br = group_rank[grouping_value(b)] or 999
 			if ar ~= br then
-				return sort_direction == "DESC" and ar > br or ar < br
+				if sort_direction == "DESC" then return ar > br end
+				return ar < br
 			end
 		end
 		if sort_method == "NAME" then
 			if a.name ~= b.name then
-				return sort_direction == "DESC" and a.name > b.name or a.name < b.name
+				if sort_direction == "DESC" then return a.name > b.name end
+				return a.name < b.name
 			end
 		end
-		return sort_direction == "DESC" and a.index > b.index or a.index < b.index
+		if sort_direction == "DESC" then return a.index > b.index end
+		return a.index < b.index
 	end)
 
 	local names = {}
