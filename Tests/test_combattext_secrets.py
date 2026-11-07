@@ -39,7 +39,8 @@ function PitBull4:IterateFramesForUnitID(unit)
     return function() if not done then done = true; return frame end end
 end
 function UnitExists() return false end
-function UnitInAnyGroup() return false end
+local group = false
+function UnitInAnyGroup() return group end
 local now = 0
 function GetTime() return now end
 CombatFeedbackText = {IMMUNE = "Immune", BLOCK = "Block", ABSORB = "Absorb"}
@@ -88,6 +89,14 @@ event("IMMUNE")
 assert(fs.text == "Immune")
 event("BLOCK")
 assert(fs.text == "Block")
+-- Secret group membership must not enter a Lua branch or write combat text.
+group = secret
+local saved_writes, saved_text = fs.writes, fs.text
+event("WOUND", "", 15, 4)
+assert(fs.writes == saved_writes and fs.text == saved_text, "secret group result was used")
+group = false
+event("WOUND", "", 15, 4)
+assert(fs.text == "-15", "public group result stopped working")
 now = 1.5
 module:UpdateAlphas()
 assert(fs.alpha == 0.6)

@@ -1,8 +1,10 @@
 # Issue #31: CombatText secret values
 
 This checkout identifies itself as Retail/Midnight 12.1.5 P008 in README.md.
-The report names P009; that installed package and the full-health reproduction
-have not been verified. Both reported unsafe comparisons exist in this source,
+The GitHub release tag P009 and main both resolve to the same commit
+`a4aad488a7c4`, whose internal TOC/build version is P008. The uploaded
+P009 ZIP and reporter's installed package remain unverified; the full-health
+reproduction has not been confirmed. Both reported unsafe comparisons exist in this source,
 so a local defensive correction is justified independently of reproduction.
 
 Modules/CombatText/CombatText.lua now skips UNIT_COMBAT payloads if unit, event,
@@ -10,6 +12,8 @@ flags, amount or damage type is secret. The check precedes frame lookup,
 comparisons, table indexing, arithmetic and formatting. This deliberately loses
 feedback for those events; existing feedback continues its normal fade. Checking
 all consumed payload fields also avoids moving the failure to a later operation.
+In the WOUND branch, UnitInAnyGroup is also checked for a secret result
+before branching; a secret group-membership result skips that feedback event.
 UpdateFrame checks whether rendered text is secret before comparing it with the
 preview string. Accessible preview text still clears as before; secret display
 contents are left alone. No profile, layout or protected-frame changes are made.
@@ -17,7 +21,8 @@ contents are left alone. No profile, layout or protected-frame changes are made.
 Tests/test_combattext_secrets.py executes the actual module under Lua 5.1 with
 stubbed APIs. It checks rejection of each payload field for damage, healing,
 energize and immunity events, secret displayed text, entering/leaving preview,
-ordinary damage/healing/energize/absorb/block/immunity feedback, and fading.
+ordinary damage/healing/energize/absorb/block/immunity feedback, secret/public
+group membership results, and fading.
 It also checks behavior when issecretvalue is absent. Sentinels model rejection;
 Lua 5.1 cannot reproduce the client's actual secret-value semantics.
 

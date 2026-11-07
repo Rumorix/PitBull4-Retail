@@ -113,7 +113,12 @@ function PitBull4_CombatText:UNIT_COMBAT(_, unit, event, flags, amount, type)
 						size_modifier = BLOCK_SIZE_MODIFIER
 					end
 
-					if UnitInAnyGroup(unit) then
+					local in_group = UnitInAnyGroup(unit)
+					if _G.issecretvalue and _G.issecretvalue(in_group) then
+						-- Do not branch on secret group-membership results.
+						return
+					end
+					if in_group then
 						r, g, b = 1, 0, 0
 					elseif type > 0 then
 						r, g, b = 1, 1, 0
