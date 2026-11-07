@@ -77,8 +77,11 @@ function PitBull4_CombatText:UpdateFrame(frame)
 
 	if frame.force_show and (not frame.unit or not UnitExists(frame.unit)) then
 		font_string:SetText(EXAMPLE_TEXT)
-	elseif font_string:GetText() == EXAMPLE_TEXT then
-		font_string:SetText("")
+	else
+		local text = font_string:GetText()
+		if not (_G.issecretvalue and _G.issecretvalue(text)) and text == EXAMPLE_TEXT then
+			font_string:SetText("")
+		end
 	end
 
 	return created
@@ -87,6 +90,12 @@ end
 local frame_to_time = {}
 
 function PitBull4_CombatText:UNIT_COMBAT(_, unit, event, flags, amount, type)
+	-- Secret payloads cannot be compared, indexed, or formatted by addon code.
+	if _G.issecretvalue and (_G.issecretvalue(unit) or _G.issecretvalue(event)
+		or _G.issecretvalue(flags) or _G.issecretvalue(amount) or _G.issecretvalue(type)) then
+		return
+	end
+
 	for frame in PitBull4:IterateFramesForUnitID(unit) do
 		local font_string = frame.CombatText
 		if font_string then
