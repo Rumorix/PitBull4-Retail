@@ -1,3 +1,17 @@
+PitBull4 Retail 12.1.5-P010 — CombatText Secret-Value Hotfix
+Build: Midnight-12.1.5-Lorenzo-P010
+Date: 2026-11-07
+
+- Fix CombatText secret-string comparisons when refreshing the preview label.
+- Skip UNIT_COMBAT payloads containing restricted unit/event/flags/amount/type fields before unsafe comparisons, arithmetic or formatting.
+- Guard UnitInAnyGroup return values before branching on a potentially secret membership result.
+- Add targeted Lua regression tests for the above behavior, public-value processing and preview transitions; tests are mocked and do not emulate Blizzard secret enforcement.
+- Preserve other existing Retail P008/P009 code and settings; no unrelated frame modules changed.
+- Note: GitHub release P009 points to the same P008-versioned commit as main; P010 aligns the actual in-game version label.
+- In-game verification for WoW 12.1.5.70783, taint behavior, and protected action safety remains pending.
+
+---
+
 PitBull4 Retail 12.1.5-P008
 Build: Midnight-12.1.5-Lorenzo-P008
 Date: 2026-10-18

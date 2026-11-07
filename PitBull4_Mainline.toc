@@ -1,7 +1,7 @@
 ## Interface: 120100, 120105
 ## Title: PitBull Unit Frames 4.0
-## Notes: Custom Retail 12.1/12.1.5 unit frames. Lorenzo 12.1.5-P008: efficient Soul Shards updates, profile rebinding and clean native recycling; cumulative P007 fixes.
-## Notes-deDE: Retail-12.1/12.1.5-Fork. Lorenzo 12.1.5-P008: effiziente Seelensplitter-Updates, Profilwechsel und saubere Wiederverwendung; inklusive P007-Fixes.
+## Notes: Custom Retail 12.1/12.1.5 unit frames. P010 CombatText secret-value hotfix; retains Soul Shards and profile stability fixes.
+## Notes-deDE: Retail-12.1/12.1.5-Fork. P010 CombatText-Secret-Value-Hotfix; bisherige Seelensplitter- und Profilfixes bleiben enthalten.
 ## Notes-esES: Marcos de unidad con temática canina. Guau. Guau. Auu.
 ## Notes-esMX: Marcos de unidad con temática canina. Guau. Guau. Auu.
 ## Notes-frFR: Fenêtres d’unité sur le thème des chiens. Ouaf. Wouf. Yap.
@@ -14,7 +14,7 @@
 ## Author: ckknight, Shekfi, Nebula
 ## SavedVariables: PitBull4DB, PitBull4SafetyBackups
 ## OptionalDeps: Ace3, LibSharedMedia-3.0, AceGUI-3.0-SharedMediaWidgets, LibDBIcon-1.0, LibBossIDs-1.0, LibDualSpec-1.0, LibPlayerSpells-1.0, LibSerialize, LibDeflate, Clique, Masque, Blizzard_AuraContainer
-## Version: Midnight-12.1.5-Lorenzo-P008
+## Version: Midnight-12.1.5-Lorenzo-P010
 ## X-Lorenzo-Branch: Midnight-12.1
 ## X-Lorenzo-Base: Midnight-12.1-Lorenzo-Patch030-AllLocaleLegacyRestore
 ## X-Lorenzo-Locales: enUS, deDE, esES, esMX, frFR, itIT, koKR, ptBR, ruRU, zhCN, zhTW
