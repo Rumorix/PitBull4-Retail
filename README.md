@@ -1,6 +1,6 @@
-# PitBull4 Retail — Midnight 12.1.5 (P008)
+# PitBull4 Retail — Midnight 12.1.5 (P010 hotfix source)
 
-Community-maintained development fork of **PitBull Unit Frames 4.0** for *World of Warcraft Retail*. Current snapshot: `Midnight-12.1.5-Lorenzo-P008` (from `LORENZO_BUILD_VERSION.txt` and `PitBull4_Mainline.toc`).
+Community-maintained development fork of **PitBull Unit Frames 4.0** for *World of Warcraft Retail*. Current snapshot: `Midnight-12.1.5-Lorenzo-P010` (from `LORENZO_BUILD_VERSION.txt` and `PitBull4_Mainline.toc`). P010 addresses the CombatText secret-value errors in #31 / PR #32; live-client validation is still outstanding.
 
 ## Areas of development
 
@@ -15,9 +15,13 @@ Open [a bug report](../../issues/new/choose). Include your exact addon and WoW b
 
 ## Source tree and dependencies
 
-`PitBull4_Mainline.toc` is at the root of this repository. The source archive used for this import contains **some**, but not all, external libraries specified in `.pkgmeta`. The `libs.xml` in P008 explicitly assumes some libraries are installed as **standalone addons**, or that a separate release packager injects them.
+`PitBull4_Mainline.toc` is at the root of this repository. The source archive used for this import contains **some**, but not all, external libraries specified in `.pkgmeta`. The `libs.xml` in this source tree explicitly assumes some libraries are installed as **standalone addons**, or that a separate release packager injects them.
 
 **Do not treat a raw GitHub source download as a verified self-contained installable release.** Validate/restore bundled dependencies and test the assembled package in the WoW client before distributing it. The imported source is not modified by this GitHub preparation.
+
+## Release version history
+
+The GitHub `P009` release/tag points to the previous P008-labeled source commit (`a4aad488a7c4`); the archived P009 ZIP's internal file contents and individual user installations have not been independently verified by this source audit. P010 establishes an explicit new version for the CombatText fix. Install the complete official GitHub Release ZIP, not GitHub-generated source archives.
 
 ## Development and releases
 

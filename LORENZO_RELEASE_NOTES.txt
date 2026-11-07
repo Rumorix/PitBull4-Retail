@@ -1,0 +1,21 @@
+# PitBull4 Retail Stable P010 — CombatText hotfix
+
+**Build:** `Midnight-12.1.5-Lorenzo-P010`  
+**Date:** 2026-11-07  
+**Fix:** [Issue #31](https://github.com/Rumorix/PitBull4-Retail/issues/31), [PR #32](https://github.com/Rumorix/PitBull4-Retail/pull/32)
+
+## Fixes
+- Guard displayed CombatText strings before comparing them against the preview example.
+- Skip combat feedback events when unit/event/flags/amount/damage-type payload values are restricted and cannot safely be inspected.
+- Guard the `UnitInAnyGroup` return value before branching on it, avoiding another secret-value exception.
+- Add targeted Lua regression tests and technical notes.
+- Preserve existing Retail functionality and settings outside CombatText.
+
+## Known limitation
+Local Codex regression checks passed for the original patch; a follow-up group-membership test was added during review and requires execution in the release build. The patch has **not yet been tested in the actual WoW client**. Protected-event suppression means some CombatText numbers may intentionally not display. Please report remaining Lua errors, including exact client build and installed addon version.
+
+## Installation
+Back up your `Interface/AddOns/PitBull4` folder and `WTF` directory. Install the complete attached `PitBull4-Retail.zip` into `Interface/AddOns/PitBull4`. Do not use the automatically generated GitHub source ZIP as a substitute for the packaged addon.
+
+## Version note
+The previous GitHub `P009` tag points to the same source commit that still reports P008 internally. P010 updates the in-game version metadata deliberately.
