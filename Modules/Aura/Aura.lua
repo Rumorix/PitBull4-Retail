@@ -15,6 +15,7 @@ timerFrame:Hide()
 
 local timer = 0
 timerFrame:SetScript("OnUpdate",function(self, elapsed)
+	PitBull4_Aura:LorenzoPatch105FlushRaidUnitAura()
 	timer = timer + elapsed
 	if timer < 0.2 then return end
 	timer = 0
@@ -52,9 +53,11 @@ end
 
 function PitBull4_Aura:OnDisable()
 	timerFrame:Hide()
+	self:LorenzoPatch105ClearRaidUnitAura()
 end
 
 function PitBull4_Aura:OnProfileChanged()
+	self:LorenzoPatch105ClearRaidUnitAura()
 	for _, func in next, self.OnProfileChanged_funcs do
 		func(self)
 	end
@@ -105,7 +108,7 @@ function PitBull4_Aura:UNIT_AURA(_, unit, update_info)
 	-- Patch 105: raid UNIT_AURA storms can be very expensive with many visible
 	-- group frames. When raid performance mode is active, coalesce repeated aura
 	-- updates for non-player raid roster units by a tiny interval. Player/party/target
-	-- frames and debuffs remain responsive; this only reduces duplicate raid spam.
+	-- frames remain responsive. Suppressed raid updates get a trailing refresh.
 	if self.LorenzoPatch105ShouldThrottleRaidUnitAura and self:LorenzoPatch105ShouldThrottleRaidUnitAura(unit) then
 		return
 	end

@@ -63,6 +63,24 @@ end
 local LORENZO_PATCH105_RAID_UNIT_AURA_THROTTLE = 0.12
 local lorenzo_patch105_raid_perf_enabled = true
 local lorenzo_patch105_next_raid_unit_aura = {}
+local lorenzo_patch105_pending_raid_unit_aura = {}
+
+function PitBull4_Aura:LorenzoPatch105ClearRaidUnitAura()
+	wipe(lorenzo_patch105_next_raid_unit_aura)
+	wipe(lorenzo_patch105_pending_raid_unit_aura)
+end
+
+function PitBull4_Aura:LorenzoPatch105FlushRaidUnitAura()
+	local now = GetTime and GetTime() or 0
+	for unit, deadline in pairs(lorenzo_patch105_pending_raid_unit_aura) do
+		if now >= deadline then
+			lorenzo_patch105_pending_raid_unit_aura[unit] = nil
+			-- Re-enter the normal handler to check native ownership and current
+			-- frame bindings/layouts. Never retain protected aura event payloads.
+			self:UNIT_AURA("UNIT_AURA", unit)
+		end
+	end
+end
 
 local function lorenzo_patch105_is_raid_roster_unit(unit)
 	if not unit or issecretvalue(unit) then
@@ -81,7 +99,7 @@ end
 
 function PitBull4_Aura:LorenzoPatch105SetRaidPerformanceMode(enabled)
 	lorenzo_patch105_raid_perf_enabled = enabled and true or false
-	wipe(lorenzo_patch105_next_raid_unit_aura)
+	self:LorenzoPatch105ClearRaidUnitAura()
 	if self.UpdateAll then
 		self:UpdateAll()
 	end
@@ -104,8 +122,11 @@ function PitBull4_Aura:LorenzoPatch105ShouldThrottleRaidUnitAura(unit)
 	local now = GetTime and GetTime() or 0
 	local next_allowed = lorenzo_patch105_next_raid_unit_aura[unit]
 	if next_allowed and next_allowed > now then
+		lorenzo_patch105_pending_raid_unit_aura[unit] = next_allowed
 		return true
 	end
+	-- An event at/after the deadline already provides the trailing refresh.
+	lorenzo_patch105_pending_raid_unit_aura[unit] = nil
 	lorenzo_patch105_next_raid_unit_aura[unit] = now + LORENZO_PATCH105_RAID_UNIT_AURA_THROTTLE
 	return false
 end
