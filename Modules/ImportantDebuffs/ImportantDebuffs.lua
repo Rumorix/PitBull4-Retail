@@ -356,7 +356,7 @@ local function configure_container_layout(container, frame, db)
 	return layout
 end
 
-local function create_state(frame, db, signature)
+local function create_state(frame, db, signature, state)
 	if type(_G.CreateFrame) ~= "function"
 		or type(_G.AuraContainerSortMethod) ~= "table"
 		or type(_G.AuraContainerSortDirection) ~= "table"
@@ -368,12 +368,14 @@ local function create_state(frame, db, signature)
 
 	local layout = get_effective_layout(frame, db)
 	local holder = _G.CreateFrame("Frame", nil, frame)
+	state.holder = holder
 	holder:SetPoint(layout.point, frame, layout.relativePoint, layout.offsetX, layout.offsetY)
 	holder:SetSize(1, 1)
 	holder:SetFrameLevel((frame:GetFrameLevel() or 1) + IMPORTANT_DEBUFF_FRAME_LEVEL_OFFSET)
 	holder:Hide()
 
 	local container = _G.CreateFrame("AuraContainer", nil, holder, "CustomAuraContainerTemplate")
+	state.container = container
 	container:SetPoint(layout.point, holder, layout.point, 0, 0)
 	container:SetFrameLevel(holder:GetFrameLevel())
 	container:Hide()
@@ -423,12 +425,9 @@ local function create_state(frame, db, signature)
 	container:Show()
 	holder:Show()
 
-	return {
-		holder = holder,
-		container = container,
-		signature = signature,
-		unit = unit,
-	}
+	state.signature = signature
+	state.unit = unit
+	return state
 end
 
 local function hide_state(state)
@@ -628,7 +627,7 @@ function ImportantDebuffs:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	self:RegisterEvent("ADDON_LOADED")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", "UpdateAll")
-	self:RegisterEvent("PLAYER_REGEN_ENABLED", "UpdateAll")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 end
 
 function ImportantDebuffs:OnDisable()
@@ -640,6 +639,13 @@ function ImportantDebuffs:OnDisable()
 	end
 	active_states = setmetatable({}, { __mode = "k" })
 	test_states = setmetatable({}, { __mode = "k" })
+end
+
+function ImportantDebuffs:PLAYER_REGEN_ENABLED()
+	-- Retry once per combat exit, rather than on every frame update. Deferred
+	-- construction needs no separate queue: UpdateAll visits eligible frames.
+	failed_frames = setmetatable({}, { __mode = "k" })
+	self:UpdateAll()
 end
 
 function ImportantDebuffs:PLAYER_ENTERING_WORLD()
@@ -674,6 +680,11 @@ function ImportantDebuffs:UpdateFrame(frame)
 	end
 
 	local signature = get_signature(frame, db)
+	-- Keep the current container through combat; do not retire it or acquire
+	-- a replacement until protected construction/layout work can run safely.
+	if in_combat_lockdown() and (not state or state.signature ~= signature) then
+		return false
+	end
 	if state and state.signature ~= signature then
 		retire_state(frame, state)
 		active_states[frame] = nil
@@ -687,8 +698,12 @@ function ImportantDebuffs:UpdateFrame(frame)
 		if failure and failure.signature == signature then
 			return false
 		end
-		local ok, result = pcall(create_state, frame, db, signature)
+		local partial = {}
+		local ok, result = pcall(create_state, frame, db, signature, partial)
 		if not ok then
+			-- Construction only runs out of combat. Keep partial references until
+			-- this point so a failed setup can be disabled and hidden as well.
+			hide_state(partial)
 			failed_frames[frame] = { signature = signature, error = tostring(result) }
 			return false
 		end
