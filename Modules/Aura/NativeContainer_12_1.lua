@@ -505,8 +505,22 @@ local function native_methods_ready(state)
 end
 
 local function should_use_native(frame)
-	if not native_enabled or not frame or frame.force_show or failed_frames[frame] then
+	if not native_enabled or not frame or frame.force_show then
 		return false
+	end
+	local failure = failed_frames[frame]
+	if failure then
+		if _G.InCombatLockdown and _G.InCombatLockdown() then return false end
+		-- Only addon-owned lifecycle identity is compared, never aura payloads.
+		if failure.layout ~= frame.layout or failure.unit ~= get_unit_token(frame)
+			or failure.db ~= PitBull4_Aura:GetLayoutDB(frame) then
+			failed_frames[frame] = nil
+		elseif failure.ready and failure.retries < 2 then
+			failure.ready = false
+			failure.retries = failure.retries + 1
+		else
+			return false
+		end
 	end
 	local state = get_native_capabilities()
 	return state and state.is121OrNewer and state.auraContainerAddonLoaded and native_methods_ready(state)
@@ -1050,11 +1064,31 @@ local function retire_all_states()
 end
 
 local function record_failure(frame, error_text)
-	failed_frames[frame] = tostring(error_text or "unknown")
-	local state = native_frames[frame]
-	if state then
-		state.lastError = failed_frames[frame]
+	local failure = failed_frames[frame]
+	if not failure then
+		-- The record itself is a generation token for queued work. Rebuild,
+		-- filter reset and successful configuration invalidate old callbacks.
+		failure = { retries = 0, layout = frame.layout, unit = get_unit_token(frame),
+			db = PitBull4_Aura:GetLayoutDB(frame) }
+		failed_frames[frame] = failure
 	end
+	failure.error = tostring(error_text or "unknown")
+	local state = native_frames[frame]
+	if state then state.lastError = failure.error end
+	if failure.pending or failure.ready or failure.retries >= 2 then return end
+	failure.pending = true
+	_G.C_Timer.After(1 + failure.retries, function()
+		if failed_frames[frame] ~= failure then return end
+		failure.pending = false
+		if failure.layout ~= frame.layout or failure.unit ~= get_unit_token(frame)
+			or failure.db ~= PitBull4_Aura:GetLayoutDB(frame) then return end
+		failure.ready = true
+		-- PLAYER_REGEN_ENABLED's UpdateAll consumes a ready retry after combat.
+		if _G.InCombatLockdown and _G.InCombatLockdown() then return end
+		if native_enabled and PitBull4_Aura:IsEnabled() and not frame.force_show then
+			PitBull4_Aura:Update(frame)
+		end
+	end)
 end
 
 local function clear_failure(frame)
@@ -1079,7 +1113,6 @@ local function create_native_state(frame, db)
 		retire_state(frame, state)
 		return nil, result
 	end
-	clear_failure(frame)
 	return state
 end
 
@@ -1240,12 +1273,24 @@ function PitBull4_Aura:Lorenzo121HasNativeFailures()
 	return next(failed_frames) ~= nil
 end
 
-function PitBull4_Aura:Lorenzo121NativeHandlesUnitAura(_unit)
-	return self:Lorenzo121NativeRendererActive() and not self:Lorenzo121HasNativeFailures()
+function PitBull4_Aura:Lorenzo121NativeHandlesUnitAura(unit)
+	if not self:Lorenzo121NativeRendererActive() then return false end
+	-- Only failed frames need legacy event delivery. A single rejected native
+	-- container must not enable Aura.lua's scan of every healthy unit frame.
+	for frame in pairs(failed_frames) do
+		local same_unit
+		if self.Lorenzo121UnitsMatch then
+			same_unit = self:Lorenzo121UnitsMatch(frame.unit, unit)
+		else
+			same_unit = frame.unit == unit
+		end
+		if same_unit then self:Update(frame) end
+	end
+	return true
 end
 
 function PitBull4_Aura:Lorenzo121ShouldRunLegacyAuraTicker()
-	return not self:Lorenzo121NativeRendererActive() or self:Lorenzo121HasNativeFailures()
+	return not self:Lorenzo121NativeRendererActive()
 end
 
 local function refresh_dynamic_group(group)
@@ -1468,7 +1513,7 @@ function PitBull4_Aura:Lorenzo121GetNativeStatusLines()
 	for frame, err in pairs(failed_frames) do
 		failure_count = failure_count + 1
 		if #lines < 16 then
-			lines[#lines + 1] = "12.1 native failure frame=" .. safe_frame_name(frame) .. " error=" .. tostring(err)
+			lines[#lines + 1] = "12.1 native failure frame=" .. safe_frame_name(frame) .. " error=" .. tostring(err.error)
 		end
 	end
 	table_insert(lines, 1, "12.1 native renderer requested=" .. tostring(native_enabled)
