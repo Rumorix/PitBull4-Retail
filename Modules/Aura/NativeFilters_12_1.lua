@@ -90,10 +90,12 @@ function Aura:GetNativeFilterSpec(id, is_buff)
 	local base = is_buff and "HELPFUL" or "HARMFUL"
 	local spec = { filterString = base, ownership = "all", primaryOwnership = "own", mode = "native-builtin" }
 	if not self:IsNativeFilterID(id) then
-		if id == "!C" or id == "!E" then
-			spec.ownership, spec.mode = "mine", "native-mine"
-		elseif id and id ~= "" and id ~= "!B" and id ~= "!D" and id ~= "!N" and id ~= "!P" and id ~= "!Q" then
-			spec.mode = "approximate:" .. tostring(id)
+		-- Legacy expressions (including built-ins) are not equivalent to a
+		-- base selection or an ownership token. Preserve them in the profile,
+		-- but use the renderer's blocked-row path instead of broadening them.
+		if id and id ~= "" then
+			spec.blocked = true
+			spec.mode = "unsupported-legacy:" .. tostring(id)
 		end
 		spec.signature = spec.mode .. ":" .. spec.ownership
 		return spec
