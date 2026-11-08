@@ -1009,6 +1009,7 @@ local function hide_group(group)
 	-- ClearFrame and renderer fallback can detach an otherwise unchanged group.
 	-- The next update must restore it instead of accepting the previous cache.
 	group.configuration = nil
+	group.ready = false
 	if group.container then
 		call_method(group.container, "SetEnabled", false)
 		call_method(group.container, "SetUnit", "none")
@@ -1174,6 +1175,9 @@ local function configure_group(group, frame, db, is_buff)
 			fixedWidth = cfg.width, widthPercent = cfg.width_percent,
 		}
 	end
+	-- Readiness is independent of the optional geometry cache (which may be
+	-- unavailable for secret dimensions). Intentionally disabled groups are ready.
+	group.ready = true
 	return true
 end
 
@@ -1300,7 +1304,12 @@ function PitBull4_Aura:Lorenzo121UpdateNativeFrame(frame)
 	-- All native filter/layout/secure scope mutations wait until combat ends.
 	-- PLAYER_REGEN_ENABLED already calls UpdateAll and reconciles saved settings.
 	if _G.InCombatLockdown and _G.InCombatLockdown() then
-		return true
+		if state and state.unit == get_unit_token(frame)
+			and state.groups.buff and state.groups.buff.ready
+			and state.groups.debuff and state.groups.debuff.ready then
+			return true
+		end
+		return nil, "deferred"
 	end
 	if state then
 		local buff_rebuild = group_needs_rebuild(state.groups.buff, frame, db, db.layout.buff, true)
@@ -1503,6 +1512,11 @@ function PitBull4_Aura:UpdateFrame(frame, ...)
 	end
 	if should_use_native(frame) then
 		local ok, err = self:Lorenzo121UpdateNativeFrame(frame)
+		if ok == nil and err == "deferred" then
+			-- No protected mutations, success cleanup, or failure fallback while
+			-- waiting for PLAYER_REGEN_ENABLED to prepare this frame.
+			return
+		end
 		if ok then
 			-- Remove pooled legacy buttons once so both renderers cannot overlap.
 			if self.ClearAuras then
