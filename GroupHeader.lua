@@ -834,7 +834,12 @@ function GroupHeader:RefreshGroup(dont_refresh_children)
 	-- self:SetAttribute("template", ClickCastHeader and "ClickCastUnitTemplate,PitBull4_UnitTemplate" or "PitBull4_UnitTemplate")
 	self:SetAttribute("template", "PitBull4_UnitTemplate")
 	self:SetAttribute("templateType", "Button")
-	self:SetAttribute("groupBy", exclude_main_tanks and nil or group_by)
+	-- The exclusion nameList is already grouped and sorted; do not regroup it.
+	if exclude_main_tanks then
+		self:SetAttribute("groupBy", nil)
+	else
+		self:SetAttribute("groupBy", group_by)
+	end
 	local order = GROUPING_ORDER[group_db.group_by]
 	if type(order) == "function" then
 		order = order()
