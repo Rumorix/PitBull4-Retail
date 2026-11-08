@@ -25,6 +25,7 @@ local unit_cast_ids = {}
 PitBull4_LuaTexts.unit_cast_ids = unit_cast_ids
 local cast_data = {}
 PitBull4_LuaTexts.cast_data = cast_data
+local unit_retries = {}
 local to_update = {}
 PitBull4_LuaTexts.to_update = to_update
 local afk_cache = {}
@@ -2112,11 +2113,54 @@ local function update_texts_for_unit(unit, event)
 	end
 end
 
-local function schedule_texts_for_unit(unit, delay, event)
+-- Keep unit-data recovery attempts separate from text-requested timer updates.
+local function schedule_texts_for_unit(unit, delay)
 	for font_string in pairs(texts) do
 		local frame = font_string.frame
-		if frame and compare_units(frame.unit, unit) then
-			to_update[font_string] = delay or 0
+		if frame and not no_update[font_string] and compare_units(frame.unit, unit) then
+			local retries = unit_retries[font_string]
+			if not retries then
+				retries = {}
+				unit_retries[font_string] = retries
+			end
+			local deadlines = retries[unit]
+			if not deadlines then
+				deadlines = {}
+				retries[unit] = deadlines
+			end
+			-- Repeated transitions restart each attempt without accumulating work.
+			deadlines[delay] = delay
+		end
+	end
+end
+
+local function update_unit_retries(elapsed)
+	for font_string, retries in pairs(unit_retries) do
+		local due = false
+		local frame = font_string.frame
+		for unit, deadlines in pairs(retries) do
+			if not frame or no_update[font_string] or not compare_units(frame.unit, unit) then
+				retries[unit] = nil
+			else
+				for delay, remaining in pairs(deadlines) do
+					remaining = remaining - elapsed
+					if remaining <= 0 then
+						deadlines[delay] = nil
+						due = true
+					else
+						deadlines[delay] = remaining
+					end
+				end
+				if not next(deadlines) then
+					retries[unit] = nil
+				end
+			end
+		end
+		if not next(retries) then
+			unit_retries[font_string] = nil
+		end
+		if due then
+			update_text(font_string, "_timer")
 		end
 	end
 end
@@ -2125,9 +2169,9 @@ function PitBull4_LuaTexts:PLAYER_TARGET_CHANGED(event)
 	update_cast_data(nil, "target")
 	update_texts_for_unit("target", event)
 	update_texts_for_unit("targettarget", event)
-	schedule_texts_for_unit("target", 0.08, event)
-	schedule_texts_for_unit("target", 0.30, event)
-	schedule_texts_for_unit("targettarget", 0.08, event)
+	schedule_texts_for_unit("target", 0.08)
+	schedule_texts_for_unit("target", 0.30)
+	schedule_texts_for_unit("targettarget", 0.08)
 	self:OnEvent(event)
 end
 
@@ -2135,9 +2179,9 @@ function PitBull4_LuaTexts:PLAYER_FOCUS_CHANGED(event)
 	update_cast_data(nil, "focus")
 	update_texts_for_unit("focus", event)
 	update_texts_for_unit("focustarget", event)
-	schedule_texts_for_unit("focus", 0.08, event)
-	schedule_texts_for_unit("focus", 0.30, event)
-	schedule_texts_for_unit("focustarget", 0.08, event)
+	schedule_texts_for_unit("focus", 0.08)
+	schedule_texts_for_unit("focus", 0.30)
+	schedule_texts_for_unit("focustarget", 0.08)
 	self:OnEvent(event)
 end
 
@@ -2397,6 +2441,7 @@ timerframe:SetScript("OnUpdate", function(self, elapsed)
 			to_update[font_string] = time
 		end
 	end
+	update_unit_retries(elapsed)
 end)
 
 function PitBull4_LuaTexts:OnNewLayout(layout)
@@ -2513,6 +2558,7 @@ end
 function PitBull4_LuaTexts:AddFontString(frame, font_string, name, data)
 	local db = font_string.db
 
+	unit_retries[font_string] = nil
 	no_update[font_string] = nil
 	font_string:Show()
 	-- Reused font strings may now have a different profile/layout configuration.
@@ -2585,6 +2631,7 @@ function PitBull4_LuaTexts:RemoveFontString(font_string)
 	mouseover_check_cache[font_string] = nil
 	spell_cast_cache[font_string] = nil
 	to_update[font_string] = nil
+	unit_retries[font_string] = nil
 	afk_cache[font_string] = nil
 	dnd_cache[font_string] = nil
 	offline_cache[font_string] = nil
@@ -2610,6 +2657,7 @@ function PitBull4_LuaTexts:OnHide(frame)
 			mouseover_check_cache[font_string] = nil
 			spell_cast_cache[font_string] = nil
 			to_update[font_string] = nil
+			unit_retries[font_string] = nil
 			afk_cache[font_string] = nil
 			dnd_cache[font_string] = nil
 			offline_cache[font_string] = nil
