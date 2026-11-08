@@ -23,7 +23,9 @@ local math_min = math.min
 
 local native_enabled = true
 local native_frames = setmetatable({}, { __mode = "k" })
-local retired_states = setmetatable({}, { __mode = "k" })
+-- Owner-specific closures prevent sharing containers between unit frames.
+local reusable_states = setmetatable({}, { __mode = "k" })
+local MAX_REUSABLE_STATES = 2
 local failed_frames = setmetatable({}, { __mode = "k" })
 local native_generation = 0
 local dynamic_refresh_count = 0
@@ -1030,7 +1032,6 @@ local function retire_state(frame, state)
 			group.visibilityGate:Hide()
 		end
 	end
-	retired_states[state] = true
 	native_frames[frame] = nil
 end
 
@@ -1043,6 +1044,8 @@ local function snapshot_native_states()
 end
 
 local function retire_all_states()
+	-- Explicit rebuilds must not resurrect the configurations being discarded.
+	reusable_states = setmetatable({}, { __mode = "k" })
 	local snapshot = snapshot_native_states()
 	for index = 1, #snapshot do
 		retire_state(snapshot[index].frame, snapshot[index].state)
@@ -1085,6 +1088,42 @@ end
 
 local function group_needs_rebuild(group, owner_frame, db, cfg, is_buff)
 	return not group or group.signature ~= get_signature(owner_frame, db, cfg, is_buff)
+end
+
+-- Cache only states that completed configuration, and only on signature edits.
+-- This bounds Lua cache retention, not client frame allocation for novel layouts.
+local function cache_native_state(frame, state)
+	if not state.configured then return end
+	local cache = reusable_states[frame] or {}
+	reusable_states[frame] = cache
+	if #cache == MAX_REUSABLE_STATES then table.remove(cache, 1) end
+	cache[#cache + 1] = state
+end
+
+local function acquire_native_state(frame, db)
+	local cache = reusable_states[frame]
+	for index = #(cache or {}), 1, -1 do
+		local state = cache[index]
+		if not group_needs_rebuild(state.groups.buff, frame, db, db.layout.buff, true)
+			and not group_needs_rebuild(state.groups.debuff, frame, db, db.layout.debuff, false) then
+			table.remove(cache, index)
+			native_frames[frame] = state
+			local ok, err = pcall(function()
+				for _, group in pairs(state.groups) do
+					if group.visibilityGate then
+						_G.RegisterStateDriver(group.visibilityGate, "visibility", group.visibilityDriver)
+					end
+				end
+			end)
+			if not ok then
+				record_failure(frame, err)
+				retire_state(frame, state)
+				return nil, err
+			end
+			return state
+		end
+	end
+	return create_native_state(frame, db)
 end
 
 local function configure_group(group, frame, db, is_buff)
@@ -1307,11 +1346,12 @@ function PitBull4_Aura:Lorenzo121UpdateNativeFrame(frame)
 		local debuff_rebuild = group_needs_rebuild(state.groups.debuff, frame, db, db.layout.debuff, false)
 		if buff_rebuild or debuff_rebuild then
 			retire_state(frame, state)
+			cache_native_state(frame, state)
 			state = nil
 		end
 	end
 	if not state then
-		local created, err = create_native_state(frame, db)
+		local created, err = acquire_native_state(frame, db)
 		if not created then
 			return false, err
 		end
@@ -1326,6 +1366,7 @@ function PitBull4_Aura:Lorenzo121UpdateNativeFrame(frame)
 		retire_state(frame, state)
 		return false, err
 	end
+	state.configured = true
 	clear_failure(frame)
 	return true
 end
