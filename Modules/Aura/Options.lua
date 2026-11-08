@@ -1683,10 +1683,10 @@ PitBull4_Aura:SetLayoutOptionsFunction(function(self)
 			legacy = { type = "description", order = 6,
 				hidden = function()
 					local db = PitBull4.Options.GetLayoutDB(self)
-					return not (self:GetNativeFilterSpec(db.layout.buff.filter_new, true).mode:match("^approximate:")
-						or self:GetNativeFilterSpec(db.layout.debuff.filter_new, false).mode:match("^approximate:"))
+					return not (self:GetNativeFilterSpec(db.layout.buff.filter_new, true).mode:match("^unsupported-legacy:")
+						or self:GetNativeFilterSpec(db.layout.debuff.filter_new, false).mode:match("^unsupported-legacy:"))
 				end,
-				name = L["This layout still uses a legacy custom filter. Its old rules are preserved, but the native renderer shows the base aura selection until you select a supported native filter."],
+				name = L["This layout uses an unsupported legacy filter. Its saved rules are preserved, but the native renderer hides that aura row until you select a supported native filter or None (all auras)."],
 			},
 		},
 	},

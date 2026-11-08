@@ -1434,7 +1434,7 @@ local function safe_frame_name(frame)
 end
 
 function PitBull4_Aura:Lorenzo121GetNativeStatusLines()
-	local frame_count, container_count, approximation_count, failure_count, weapon_count = 0, 0, 0, 0, 0
+	local frame_count, container_count, unsupported_legacy_count, failure_count, weapon_count = 0, 0, 0, 0, 0
 	local lines = {}
 	for frame, state in pairs(native_frames) do
 		frame_count = frame_count + 1
@@ -1443,8 +1443,8 @@ function PitBull4_Aura:Lorenzo121GetNativeStatusLines()
 			if group.hasWeaponEnchantments then
 				weapon_count = weapon_count + 1
 			end
-			if group.filterMode and group.filterMode:match("^approximate:") then
-				approximation_count = approximation_count + 1
+			if group.filterMode and group.filterMode:match("^unsupported-legacy:") then
+				unsupported_legacy_count = unsupported_legacy_count + 1
 			end
 		end
 		if #lines < 12 then
@@ -1482,7 +1482,7 @@ function PitBull4_Aura:Lorenzo121GetNativeStatusLines()
 		.. " frames=" .. tostring(frame_count)
 		.. " containers=" .. tostring(container_count)
 		.. " weaponContainers=" .. tostring(weapon_count)
-		.. " approximateFilters=" .. tostring(approximation_count)
+		.. " unsupportedLegacyFilters=" .. tostring(unsupported_legacy_count)
 		.. " dynamicRefresh=" .. tostring(dynamic_refresh_count)
 		.. " dynamicRefreshBounce=" .. tostring(dynamic_refresh_bounce_count)
 		.. " dynamicRefreshMark=" .. tostring(dynamic_refresh_mark_count)
