@@ -356,6 +356,7 @@ PitBull4_Aura.can_purge = can_purge
 -- Rescan spells that can change what we can dispel and purge.
 function PitBull4_Aura:PLAYER_TALENT_UPDATE()
 	for spell_type, spells in next, purge_spells do
+		can_purge[spell_type] = nil
 		for spell_id, spell_bank in next, spells do
 			if IsSpellKnownOrInSpellBook(spell_id, spell_bank) then
 				can_purge[spell_type] = true
@@ -365,6 +366,7 @@ function PitBull4_Aura:PLAYER_TALENT_UPDATE()
 	end
 
 	for spell_type, spells in next, dispel_spells do
+		can_dispel[spell_type] = nil
 		for spell_id, spell_bank in next, spells do
 			if IsSpellKnownOrInSpellBook(spell_id, spell_bank) then
 				can_dispel[spell_type] = true
