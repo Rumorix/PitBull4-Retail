@@ -2111,9 +2111,13 @@ do
 	function PitBull4:PLAYER_REGEN_ENABLED()
 		in_combat = false
 		in_lockdown = false
-		for i, t in ipairs(actions_to_perform) do
-			t.f(unpack(t, 1, t.n))
-			actions_to_perform[i] = nil
+		local pending = actions_to_perform
+		actions_to_perform = {}
+		for i, t in ipairs(pending) do
+			-- Lua 5.1 xpcall does not forward arguments. Keep the explicit
+			-- count (including trailing nils) inside the protected call.
+			xpcall(function() t.f(unpack(t, 1, t.n)) end, geterrorhandler())
+			pending[i] = nil
 			wipe(t)
 			pool[t] = true
 		end
